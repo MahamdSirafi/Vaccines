@@ -1,0 +1,8 @@
+const vaci=require('../models/listvacModel')
+const apifeater=require('../utils/apiFeatures')
+const factory=require('../utils/handlerFactory')
+exports.getAllvacci=factory.getAll(vaci)
+exports.getvacci=factory.getOne(vaci)
+exports.createvacci=factory.createOne(vaci)
+exports.deletevacci=factory.deleteOne(vaci)
+exports.updatevacci=factory.updateOne(vaci)
