@@ -7,6 +7,7 @@ exports.getAllcard = factory.getAllpop1(card, {
   path: "mother_name",
   select: "first_Name last_Name -_id",
 });
+//mas
 exports.getcard = factory.getOne(card);
 exports.getchildcard = factory.getOne(card, {
   path: "mother_name",
