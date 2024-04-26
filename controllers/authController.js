@@ -77,7 +77,7 @@ exports.logout = (req, res) => {
 //password
 exports.forgotPassword = catchAsync(async (req, res, next) => {
   // 1) Get user based on POSTed email
-  const user = await User.findOne({ email: req.body.email });
+  const user = await User.findOne({ phone_number: req.body.phone_number });
   if (!user) {
     return next(new AppError("There is no user with email address.", 404));
   }
