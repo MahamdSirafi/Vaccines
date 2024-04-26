@@ -1,7 +1,7 @@
-const User = require('./../models/userModel');
-const catchAsync = require('../utils/catchAsync');
-const AppError = require('./../utils/appError');
-const factory = require('../utils/handlerFactory');
+const User = require("./../models/userModel");
+const catchAsync = require("../utils/catchAsync");
+const AppError = require("./../utils/appError");
+const factory = require("../utils/handlerFactory");
 const filterObj = (obj, ...allowedFields) => {
   const newObj = {};
   Object.keys(obj).forEach((el) => {
@@ -18,15 +18,15 @@ exports.updateMe = catchAsync(async (req, res, next) => {
   if (req.body.password) {
     return next(
       new AppError(
-        'This route is not for password updates. Please use /updateMyPassword.',
+        "This route is not for password updates. Please use /updateMyPassword.",
         400
       )
     );
   }
   // 2) Filtered out unwanted fields names that are not allowed to be updated
-  const filteredBody = filterObj(req.body, 'name','phone', 'photo');
+  const filteredBody = filterObj(req.body, "name", "phone", "photo");
   if (req.file)
-    filteredBody.photo = `${req.protocol}://${req.get('host')}/img/users/${
+    filteredBody.photo = `${req.protocol}://${req.get("host")}/img/users/${
       req.file.filename
     }`;
   // 3) Update user document
@@ -35,7 +35,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
     runValidators: true,
   });
   res.status(200).json({
-    status: 'success',
+    status: "success",
     data: {
       user: updatedUser,
     },
@@ -44,26 +44,34 @@ exports.updateMe = catchAsync(async (req, res, next) => {
 exports.deleteMe = catchAsync(async (req, res, next) => {
   await User.findByIdAndUpdate(req.user.id, { active: false });
   res.status(200).json({
-    status: 'success',
+    status: "success",
   });
 });
 exports.activeMe = catchAsync(async (req, res, next) => {
   await User.findByIdAndUpdate(req.user.id, { active: true });
   res.status(200).json({
-    status: 'success',
+    status: "success",
   });
 });
 
 exports.createUserNotuse = (req, res) => {
   res.status(500).json({
-    status: 'error',
-    message: 'This route is not defined! Please use /signup instead',
+    status: "error",
+    message: "This route is not defined! Please use /signup instead",
   });
 };
 
 exports.createUser = factory.createOne(User);
-exports.getUser = factory.getOne(User);
-exports.getAllUsers = factory.getAll(User);
+exports.getUser = factory.getOne(
+  User,
+  { path: "card_id", select: "-_id -__v -card_type" },
+  { path: "center", select: "-_id -__v -manger" }
+);
+exports.getAllUsers = factory.getAllpop1(
+  User,
+  { path: "card_id", select: "-_id -__v -card_type" },
+  { path: "center", select: "-_id -__v -manger" }
+);
 // Do NOT update passwords with this!
 exports.updateUser = factory.updateOne(User);
 exports.deleteUser = factory.deleteOne(User);

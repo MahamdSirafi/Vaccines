@@ -2,9 +2,8 @@ const jwt = require("jsonwebtoken");
 const User = require("./../models/userModel");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("./../utils/appError");
-const Email = require("../config/email");
 const crypto = require("crypto");
-const card = require("../models/cardModel");
+const Card = require("../models/cardModel");
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
@@ -28,37 +27,25 @@ createSendToken = (user, statusCode, req, res) => {
   });
 };
 exports.signup = catchAsync(async (req, res, next) => {
-  let newUser;
-  if (req.body.card_id) {
-    let x = await card.findOne({ card_id: +req.body.card_id });
-    newUser = await User.create({
-      name: req.body.name,
-      // email: req.body.email,
-      password: req.body.password,
-      phone_number: req.body.phone_number,
-      card_id: x._id,
-    });
-  } else {
-    newUser = await User.create({
-      name: req.body.name,
-      password: req.body.password,
-      phone_number: req.body.phone_number,
-    });
-  }
-  // const url = `${req.protocol}://${req.get('host')}/me`;
-  // await new Email(newUser, url).sendWelcome();
+  if (req.body.role === ("admin" || "mgr" || "nurse"))
+    return next(
+      new AppError("ممنوع استدخدام انشاء الحساب لغير المستخدمين", 403)
+    );
+  const card = await Card.findOne({ card_id: req.body.card_id });
+  req.body.card_id = card._id;
+  const newUser = await User.create(req.body);
   createSendToken(newUser, 201, req, res);
 });
 exports.login = catchAsync(async (req, res, next) => {
   const { phone_number, password } = req.body;
   // 1) Check if email and password exist
   if (!phone_number || !password) {
-    return next(new AppError("Please provide phone and password!", 400));
+    return next(new AppError("الرجاء التحقق من كلمة السر او رقم الهاتف", 400));
   }
   // 2) Check if user exists && password is correct
   const user = await User.findOne({ phone_number }).select("+password");
   if (!user) {
-    return next(new AppError("Incorrect phone", 401));
+    return next(new AppError("رقم الهاتف غير موجود", 401));
   }
   if (!(await user.correctPassword(password, user.password))) {
     return next(new AppError("Incorrect password", 401));
@@ -79,7 +66,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   // 1) Get user based on POSTed email
   const user = await User.findOne({ phone_number: req.body.phone_number });
   if (!user) {
-    return next(new AppError("There is no user with email address.", 404));
+    return next(new AppError("لا يوجد مستخدم يمتلك هذا رقم الهاتف", 404));
   }
   // 2) Generate the random reset token
   const resetToken = user.createPasswordResetToken();
@@ -89,7 +76,6 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     const resetURL = `${req.protocol}://${req.get("host")}${req.originalUrl
       .split("/", 4)
       .join("/")}/resetPassword/${resetToken}`;
-    // await new Email(user, resetURL).sendPasswordReset();
     res.status(200).json({
       status: "success",
       message: "Token sent to email!",
@@ -100,7 +86,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     user.passwordResetExpires = undefined;
     await user.save({ validateBeforeSave: false });
     return next(
-      new AppError("There was an error sending the email. Try again later!"),
+      new AppError("يوجد مشكلة في ارسال الرمز الى رقم الهاتف"),
       500
     );
   }
@@ -117,7 +103,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   });
   // 2) If token has not expired, and there is user, set the new password
   if (!user) {
-    return next(new AppError("Token is invalid or has expired", 400));
+    return next(new AppError("لقد انتهت صلاحية الرمز او الرمز خاطء", 400));
   }
   user.password = req.body.password;
   user.passwordResetToken = undefined;
@@ -132,7 +118,7 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.user.id).select("+password");
   // 2) Check if POSTed current password is correct
   if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
-    return next(new AppError("Your current password is wrong.", 401));
+    return next(new AppError("كلمة السر الحالية غير صحيحة", 401));
   }
   // 3) If so, update password
   user.password = req.body.password;

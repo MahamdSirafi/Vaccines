@@ -50,7 +50,7 @@ vaccineSchema.post("save", async (doc) => {
       //ارسال رسالة الى المسؤول الاكبر عن انخفاض كمية اللقاح في مركذ ما
       await messag.create({
         messag: `لقد اصبحت كمية اللقاح ${thisvaccli.name}في مركز ${thiscenter.name_center}اصغر من 30  من الكمية المستحقة`,
-        user: thiscenter.manger
+        user: thiscenter.manger,
       });
     }
     // console.log(ce.amount / ce.maxAmount);
@@ -59,7 +59,7 @@ vaccineSchema.post("save", async (doc) => {
       //ارسال رسالة الى المسؤول الاكبر عن انخفاض كمية اللقاح في مركذ ما
       await messag.create({
         messag: `لقد اصبحت كمية اللقاح ${thisvaccli.name}في مركز ${thiscenter.name_center}اصغر من 70  من الكمية المستحقة`,
-        user: thiscenter.manger
+        user: thiscenter.manger,
       });
     }
   });

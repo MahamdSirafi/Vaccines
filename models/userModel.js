@@ -1,58 +1,62 @@
-const crypto = require('crypto');
-const mongoose = require('mongoose');
-const validator = require('validator');
-const bcrypt = require('bcryptjs');
-const { StringDecoder } = require('string_decoder');
+const crypto = require("crypto");
+const mongoose = require("mongoose");
+const validator = require("validator");
+const bcrypt = require("bcryptjs");
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'Please tell us your name!'],
+    required: [true, "الرجاء ادخال اسم المستخدم"],
     trim: true,
   },
-  // email: {
-  //   type: String,
-  //   required: [true, 'Please provide your email'],
-  //   unique: true,
-  //   lowercase: true,
-  //   validate: [validator.isEmail, 'Please provide a valid email'],
-  // },
-  card_id:
-    {
-      type:mongoose.Schema.ObjectId,
-      ref:"Card",
-      // required:false
+  card_id: {
+    type: mongoose.Schema.ObjectId,
+    ref: "Card",
+    select: function () {
+      return this.role == "user" ? true : false;
     },
-  
+  },
+
   photo: {
     type: String,
-    default: 'default.jpg',
+    default: "default.jpg",
   },
   role: {
     type: String,
-    enum: ['user', 'mgr', 'nurse', 'admin'],
-    default: 'user',
+    enum: ["user", "mgr", "nurse", "admin"],
+    default: "user",
   },
   password: {
     type: String,
-    required: [true, 'Please provide a password'],
+    required: [true, "الرجاء ادخال كلمة المرور"],
     minlength: 8,
     select: false,
     trim: true,
-    default:11111111
+    default: 11111111,
   },
-  phone_number:{
-    type:String,
-    required:true,
-
+  phone_number: {
+    type: String,
+    required: [true, "الرجاء ادخال رقم الهاتف"],
+    unique: true,
+    validate: {
+      validator: function (el) {
+        return /(\+963[345689]\d{8}|09[345689]\d{7})/.test(el);
+      },
+      message: "ادخال رقم هاتف صالح",
+    },
   },
   center: {
     type: mongoose.Schema.ObjectId,
     ref: "Center",
+    select: function () {
+      return this.role == "nurse" || this.role == "mgr" ? true : false;
+    },
   },
-  
+
   address: {
     type: String,
-    // required:true
+    select: function () {
+      return this.role == "nurse" || this.role == "mgr" ? true : false;
+    },
   },
   passwordChangedAt: Date,
   passwordResetToken: String,
@@ -62,15 +66,15 @@ const userSchema = new mongoose.Schema({
     default: true,
   },
 });
-userSchema.pre('save', async function (next) {
+userSchema.pre("save", async function (next) {
   // Only run this function if password was actually modified
-  if (!this.isModified('password')) return next();
+  if (!this.isModified("password")) return next();
   // Hash the password with cost of 12
   this.password = await bcrypt.hash(this.password, 12);
   next();
 });
-userSchema.pre('save', function (next) {
-  if (!this.isModified('password') || this.isNew) return next();
+userSchema.pre("save", function (next) {
+  if (!this.isModified("password") || this.isNew) return next();
   this.passwordChangedAt = Date.now() - 1000;
   next();
 });
@@ -93,13 +97,13 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
   return false;
 };
 userSchema.methods.createPasswordResetToken = function () {
-  const resetToken = crypto.randomBytes(32).toString('hex');
+  const resetToken = crypto.randomBytes(32).toString("hex");
   this.passwordResetToken = crypto
-    .createHash('sha256')
+    .createHash("sha256")
     .update(resetToken)
-    .digest('hex');
+    .digest("hex");
   this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
   return resetToken;
 };
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model("User", userSchema);
 module.exports = User;

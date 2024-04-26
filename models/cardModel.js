@@ -21,10 +21,19 @@ const cardSchema = new mongoose.Schema({
   mother_name: {
     type: mongoose.Schema.ObjectId,
     ref: "Card",
+    select: function () {
+      return this.card_type == "child" ? true : false;
+    },
   },
   phone: {
     type: String,
-    // required: true,
+    unique: true,
+    validate: {
+      validator: function (el) {
+        return /(\+963[345689]\d{8}|09[345689]\d{7})/.test(el);
+      },
+      message: "ادخال رقم هاتف صالح",
+    },
   },
   birthday: {
     type: Date,
