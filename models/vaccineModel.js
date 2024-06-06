@@ -4,34 +4,37 @@ const v_c = require("./vacc-centerModel");
 const messag = require("./messagModel");
 const vaccli = require("./listvacModel");
 const center = require("./centersModel");
-const vaccineSchema = new mongoose.Schema({
-  current_date: {
-    type: Date,
-    required: true,
-  },
-  next_date: {
-    type: Date,
-    required: true,
-  },
-  center: {
-    type: mongoose.Schema.ObjectId,
-    ref: "Center",
-  },
-  nurse_name: {
-    type: mongoose.Schema.ObjectId,
-    ref: "User",
-  },
-  card: {
-    type: mongoose.Schema.ObjectId,
-    ref: "Card",
-  },
-  vaccli: [
-    {
-      type: mongoose.Schema.ObjectId,
-      ref: "Vaccli",
+const vaccineSchema = new mongoose.Schema(
+  {
+    current_date: {
+      type: Date,
+      default: Date.now(),
     },
-  ],
-});
+    next_date: {
+      type: Date,
+      required: true,
+    },
+    center: {
+      type: mongoose.Schema.ObjectId,
+      ref: "Center",
+    },
+    nurse_name: {
+      type: mongoose.Schema.ObjectId,
+      ref: "User",
+    },
+    card: {
+      type: mongoose.Schema.ObjectId,
+      ref: "Card",
+    },
+    vaccli: [
+      {
+        type: mongoose.Schema.ObjectId,
+        ref: "Vaccli",
+      },
+    ],
+  },
+  { versionKey: false }
+);
 vaccineSchema.post("save", async (doc) => {
   let thisvaccli;
   //جلب معلومات مركذ لقاح محدد
@@ -53,9 +56,7 @@ vaccineSchema.post("save", async (doc) => {
         user: thiscenter.manger,
       });
     }
-    // console.log(ce.amount / ce.maxAmount);
     if (ce.amount / ce.maxAmount < 0.7) {
-      // console.log("vvvv");
       //ارسال رسالة الى المسؤول الاكبر عن انخفاض كمية اللقاح في مركذ ما
       await messag.create({
         messag: `لقد اصبحت كمية اللقاح ${thisvaccli.name}في مركز ${thiscenter.name_center}اصغر من 70  من الكمية المستحقة`,

@@ -52,9 +52,9 @@ exports.getmyvaccin = async (req, res, next) => {
   });
 };
 exports.createvaccine = async (req, res, next) => {
-  let doc_card = await card.findOne({ card_id: req.body.card });
+  let doc_card = await card.findOne({ card_id: req.body.card_id });
   let data = { ...req.body };
-  data.card = doc_card;
+  data.card = doc_card._id;
   data.nurse_name = req.user._id;
   data.center = req.user.center;
   const doc = await vaccine.create(data);
@@ -65,7 +65,7 @@ exports.createvaccine = async (req, res, next) => {
 };
 exports.deletevaccine = factory.deleteOne(vaccine);
 exports.updatevaccine = factory.updateOne(vaccine);
-exports.remamber=async(req, res, next) =>{
+exports.remamber = async (req, res, next) => {
   let currentDate = new Date();
   let listUsers = await vaccine.aggregate([
     {
@@ -88,4 +88,4 @@ exports.remamber=async(req, res, next) =>{
     },
   ]);
   res.json({ listUsers });
-}
+};
